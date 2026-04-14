@@ -529,7 +529,7 @@
 const API = '';
 
 let priority = 'MED';
-let queue = JSON.parse(localStorage.getItem('ticket_queue_generic') || '[]');
+let queue = JSON.parse(localStorage.getItem('ticket_queue') || '[]');
 
 // -- Theme ----------------------------------------------------
 const ICON_MOON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
@@ -737,13 +737,13 @@ async function reprintTicket(id, btn) {
 function addToQueue(title, prio, notes, dueDate, dt) {
   queue.unshift({ title, prio, notes, dueDate, dt, id: Date.now() });
   if (queue.length > 20) queue.pop();
-  localStorage.setItem('ticket_queue_generic', JSON.stringify(queue));
+  localStorage.setItem('ticket_queue', JSON.stringify(queue));
   renderQueue();
 }
 
 function removeFromQueue(id) {
   queue = queue.filter(q => q.id !== id);
-  localStorage.setItem('ticket_queue_generic', JSON.stringify(queue));
+  localStorage.setItem('ticket_queue', JSON.stringify(queue));
   renderQueue();
 }
 

@@ -2,7 +2,7 @@ services:
   ticket-printer:
     build:
       context: .
-      dockerfile: Dockerfile.generic
+      dockerfile: Dockerfile
     container_name: ticket-printer
     restart: unless-stopped
     ports:

@@ -17,7 +17,7 @@ On Mac, run `ls /dev/usb*` or check System Information. The path will look like 
 
 On Windows, USB serial printers typically need a COM port bridge or a tool like [com0com](https://com0com.sourceforge.net/). Check Device Manager for the port name.
 
-**2. Edit `docker-compose.generic.yml`**
+**2. Edit `docker-compose.yml`**
 
 Update the two lines marked below:
 
@@ -33,7 +33,7 @@ A full list of timezone names is available at: https://en.wikipedia.org/wiki/Lis
 **3. Start the server**
 
 ```bash
-docker compose -f docker-compose.generic.yml up --build
+docker compose up --build
 ```
 
 Then open **http://localhost:3000** in your browser.
@@ -41,13 +41,13 @@ Then open **http://localhost:3000** in your browser.
 To run it in the background:
 
 ```bash
-docker compose -f docker-compose.generic.yml up --build -d
+docker compose up --build -d
 ```
 
 To stop it:
 
 ```bash
-docker compose -f docker-compose.generic.yml down
+docker compose down
 ```
 
 ## Printer setup

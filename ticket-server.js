@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Serve the frontends
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index-generic.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 app.get('/lists', (req, res) => {
   res.sendFile(path.join(__dirname, 'list-printer.html'));

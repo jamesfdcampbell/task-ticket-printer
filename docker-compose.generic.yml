@@ -1,0 +1,13 @@
+services:
+  ticket-printer:
+    build:
+      context: .
+      dockerfile: Dockerfile.generic
+    container_name: ticket-printer
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    devices:
+      - /dev/usb/lp0:/dev/usb/lp0
+    environment:
+      - TZ=America/Chicago

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>List Printer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #e8f5ee;
+    --surface: #f2fbf6;
+    --surface2: #d4ecde;
+    --border: #96ccb0;
+    --text: #0a1f14;
+    --text-muted: #3d7a58;
+    --accent: #1a6fd4;
+    --accent-fg: #ffffff;
+    --accent-light: #4a9aee;
+    --high: #e8650a;
+    --med: #1a6fd4;
+    --low: #1a9e6e;
+    --high-bg: #fdeee4;
+    --med-bg: #ddeef8;
+    --low-bg: #d0eddf;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --preview-bg: #d8eee2;
+    --drag-bg: #c0e8d0;
+  }
+
+  [data-theme=dark] {
+    --bg: #0c1f14;
+    --surface: #102a1c;
+    --surface2: #163824;
+    --border: #1e4c30;
+    --text: #c0e8d0;
+    --text-muted: #3d7a58;
+    --accent: #2a82e8;
+    --accent-fg: #ffffff;
+    --accent-light: #2a82e8;
+    --high: #e8760a;
+    --med: #2a82e8;
+    --low: #22b87a;
+    --high-bg: #281608;
+    --med-bg: #0c2040;
+    --low-bg: #0a2a1a;
+    --preview-bg: #0e2418;
+    --drag-bg: #1e4830;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .layout {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    flex: 1;
+  }
+
+  @media (max-width: 680px) {
+    .layout { grid-template-columns: 1fr; }
+    header { flex-wrap: wrap; gap: 0.5rem; }
+    header h1 { font-size: 1.1rem; flex: 1; }
+    .nav-tabs { width: 100%; }
+    .nav-tab { flex: 1; text-align: center; }
+  }
+
+  .nav-tabs { display: flex; gap: 0.25rem; }
+
+  .nav-tab {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .nav-tab:hover { border-color: var(--accent-light); color: var(--text); }
+  .nav-tab.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+
+  .theme-btn {
+    background: none;
+    border: none;
+    padding: 0.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s;
+    line-height: 0;
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { color: var(--text); }
+
+  .printer-status {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    margin-top: -0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #aaa;
+    transition: background 0.3s;
+  }
+  .status-dot.ok { background: var(--low); }
+  .status-dot.error { background: var(--high); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .card h2 {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, background 0.2s;
+    margin-bottom: 1rem;
+  }
+  input[type="text"]:focus { border-color: var(--accent-light); }
+
+  @media (max-width: 680px) {
+    input[type="text"], textarea, select, input[type="date"],
+    .add-btn, .s-btn { font-size: 16px; }
+  }
+
+  /* Item input row */
+  .item-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .item-input-row input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .add-btn {
+    background: var(--low);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0 1rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .add-btn:hover { opacity: 0.85; }
+
+  /* Draggable list */
+  .item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    min-height: 2rem;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: grab;
+    transition: background 0.15s, box-shadow 0.15s;
+    user-select: none;
+  }
+  .item-row:active { cursor: grabbing; }
+  .item-row.dragging {
+    opacity: 0.4;
+  }
+  .item-row.drag-over {
+    background: var(--drag-bg);
+    border-color: var(--accent-light);
+  }
+
+  .drag-handle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    cursor: grab;
+    opacity: 0.5;
+  }
+
+  .item-num {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    min-width: 1.2rem;
+  }
+
+  .item-text {
+    flex: 1;
+    font-size: 0.92rem;
+  }
+
+  .item-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .item-del:hover { opacity: 1; color: var(--high); }
+
+  .empty-list {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 1.5rem 0;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+
+  /* Action buttons */
+  .action-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .print-btn {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .print-btn:hover { opacity: 0.88; }
+  .print-btn:active { transform: scale(0.98); }
+  .print-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .clear-btn {
+    padding: 0.75rem 1rem;
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .clear-btn:hover { border-color: var(--high); color: var(--high); }
+
+  /* Saved lists panel */
+  .saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  .saved-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow: hidden;
+  }
+
+  .saved-item-row1 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .saved-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    flex: 1;
+  }
+
+  .saved-meta {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .saved-preview {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .saved-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .s-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+  .s-btn:hover { border-color: var(--accent-light); color: var(--text); }
+  .s-btn.danger:hover { border-color: var(--high); color: var(--high); }
+
+  .empty-saved {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 1.5rem 0;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 99;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <header>
+    <h1>// list printer</h1>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()"></button>
+    <nav class="nav-tabs">
+      <a class="nav-tab" href="/">Tasks</a>
+      <a class="nav-tab active" href="/lists">Lists</a>
+      <a class="nav-tab" href="/watch">Watch</a>
+    </nav>
+  </header>
+
+  <div class="printer-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">checking printer...</span>
+  </div>
+
+  <!-- Builder -->
+  <div class="card">
+    <h2>New List</h2>
+
+    <label>List name</label>
+    <input type="text" id="listName" placeholder="e.g. Grocery Run, Camping Trip...">
+
+    <label>Add item</label>
+    <div class="item-input-row">
+      <input type="text" id="itemInput" placeholder="Item name..." onkeydown="if(event.key==='Enter') addItem()">
+      <button class="add-btn" onclick="addItem()">+ ADD</button>
+    </div>
+
+    <div class="item-list" id="itemList">
+      <div class="empty-list" id="emptyMsg">No items yet � add one above</div>
+    </div>
+
+    <div class="action-row">
+      <button class="print-btn" id="printBtn" onclick="printList()">PRINT LIST</button>
+      <button class="clear-btn" onclick="clearList()">CLEAR</button>
+    </div>
+  </div>
+
+  <!-- Saved lists -->
+  <div class="card">
+    <h2>Saved Lists</h2>
+    <div class="saved-list" id="savedLists">
+      <div class="empty-saved">No saved lists yet</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+
+// -- Theme -----------------------------------------------------
+const ICON_MOON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+const ICON_SUN  = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.78" y2="4.22"/></svg>';
+
+const savedTheme = localStorage.getItem('theme') || 'light';
+applyTheme(savedTheme);
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').innerHTML = t === 'dark' ? ICON_SUN : ICON_MOON;
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+
+// -- State -----------------------------------------------------
+let items = [];
+let savedLists = JSON.parse(localStorage.getItem('saved_lists') || '[]');
+let dragSrcIndex = null;
+
+// -- Items -----------------------------------------------------
+function addItem() {
+  const input = document.getElementById('itemInput');
+  const val = input.value.trim();
+  if (!val) return;
+  items.push(val);
+  input.value = '';
+  input.focus();
+  renderItems();
+}
+
+function removeItem(i) {
+  items.splice(i, 1);
+  renderItems();
+}
+
+function clearList() {
+  items = [];
+  document.getElementById('listName').value = '';
+  renderItems();
+}
+
+function renderItems() {
+  const el = document.getElementById('itemList');
+  const empty = document.getElementById('emptyMsg');
+
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-list" id="emptyMsg">No items yet � add one above</div>';
+    return;
+  }
+
+  el.innerHTML = items.map((item, i) => `
+    <div class="item-row"
+      draggable="true"
+      data-i="${i}"
+      ondragstart="onDragStart(event, ${i})"
+      ondragover="onDragOver(event, ${i})"
+      ondragleave="onDragLeave(event)"
+      ondrop="onDrop(event, ${i})"
+      ondragend="onDragEnd(event)">
+      <span class="drag-handle">&#9776;</span>
+      <span class="item-num">${i + 1}.</span>
+      <span class="item-text">${escHtml(item)}</span>
+      <button class="item-del" onclick="removeItem(${i})">x</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// -- Drag & drop -----------------------------------------------
+function onDragStart(e, i) {
+  dragSrcIndex = i;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e, i) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.item-row').forEach(r => r.classList.remove('drag-over'));
+  if (i !== dragSrcIndex) e.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e, i) {
+  e.preventDefault();
+  if (i === dragSrcIndex) return;
+  const moved = items.splice(dragSrcIndex, 1)[0];
+  items.splice(i, 0, moved);
+  dragSrcIndex = null;
+  renderItems();
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.item-row').forEach(r => {
+    r.classList.remove('dragging', 'drag-over');
+  });
+  dragSrcIndex = null;
+}
+
+// -- Print -----------------------------------------------------
+async function printList() {
+  const listName = document.getElementById('listName').value.trim();
+  if (!listName) { showToast('Please enter a list name'); return; }
+  if (!items.length) { showToast('Please add at least one item'); return; }
+
+  const btn = document.getElementById('printBtn');
+  btn.disabled = true;
+  btn.textContent = 'SENDING...';
+
+  try {
+    const res = await fetch(API + '/print-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listName, items })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      saveList(listName, [...items]);
+      showToast('List sent to printer');
+    } else {
+      showToast('Print error: ' + (data.error || 'unknown'));
+    }
+  } catch (e) {
+    showToast('Cannot reach print server');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'PRINT LIST';
+}
+
+// -- Saved lists -----------------------------------------------
+function saveList(name, listItems) {
+  const existing = savedLists.findIndex(l => l.name === name);
+  const entry = { name, items: listItems, date: nowDt(), id: Date.now() };
+  if (existing >= 0) {
+    savedLists[existing] = entry;
+  } else {
+    savedLists.unshift(entry);
+  }
+  if (savedLists.length > 30) savedLists.pop();
+  localStorage.setItem('saved_lists', JSON.stringify(savedLists));
+  renderSaved();
+}
+
+function loadList(id) {
+  const list = savedLists.find(l => l.id === id);
+  if (!list) return;
+  document.getElementById('listName').value = list.name;
+  items = [...list.items];
+  renderItems();
+  showToast('List loaded � edit and reprint');
+}
+
+async function reprintList(id, btn) {
+  const list = savedLists.find(l => l.id === id);
+  if (!list) return;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const res = await fetch(API + '/print-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listName: list.name, items: list.items })
+    });
+    const data = await res.json();
+    showToast(data.ok ? 'Reprinted' : 'Error: ' + (data.error || 'unknown'));
+    if (data.ok) {
+      // Update the saved date
+      list.date = nowDt();
+      localStorage.setItem('saved_lists', JSON.stringify(savedLists));
+      renderSaved();
+    }
+  } catch (e) {
+    showToast('Cannot reach print server');
+  }
+  btn.disabled = false;
+  btn.textContent = 'REPRINT';
+}
+
+function deleteSaved(id) {
+  savedLists = savedLists.filter(l => l.id !== id);
+  localStorage.setItem('saved_lists', JSON.stringify(savedLists));
+  renderSaved();
+}
+
+function renderSaved() {
+  const el = document.getElementById('savedLists');
+  if (!savedLists.length) {
+    el.innerHTML = '<div class="empty-saved">No saved lists yet</div>';
+    return;
+  }
+  el.innerHTML = savedLists.map(l => `
+    <div class="saved-item">
+      <div class="saved-item-row1">
+        <span class="saved-name">${escHtml(l.name)}</span>
+        <div class="saved-actions">
+          <button class="s-btn" onclick="loadList(${l.id})">LOAD</button>
+          <button class="s-btn" onclick="reprintList(${l.id}, this)">REPRINT</button>
+          <button class="s-btn danger" onclick="deleteSaved(${l.id})">x</button>
+        </div>
+      </div>
+      <div class="saved-meta">${l.items.length} item${l.items.length !== 1 ? 's' : ''} | printed ${l.date}</div>
+      <div class="saved-preview">${l.items.map(escHtml).join(', ')}</div>
+    </div>
+  `).join('');
+}
+
+// -- Utils -----------------------------------------------------
+function nowDt() {
+  const n = new Date();
+  const p = x => String(x).padStart(2, '0');
+  return n.getFullYear() + '-' + p(n.getMonth()+1) + '-' + p(n.getDate()) + ' ' + p(n.getHours()) + ':' + p(n.getMinutes());
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function checkStatus() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  try {
+    const res = await fetch(API + '/status', { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    dot.className = 'status-dot ok';
+    txt.textContent = 'printer ready | ' + data.printer;
+  } catch {
+    dot.className = 'status-dot error';
+    txt.textContent = 'print server offline';
+  }
+}
+
+// -- Init ------------------------------------------------------
+renderItems();
+renderSaved();
+checkStatus();
+setInterval(checkStatus, 15000);
+</script>
+</body>
+</html>
